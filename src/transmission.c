@@ -8,8 +8,8 @@
 
 #include "transmission.h"
 
-#define SERVER_IP "192.168.100.1"
-#define PORT 4321
+#define SERVER_IP "192.168.12.1"
+#define PORT 8089
 
 struct sockaddr_in dest_addr;
 int32_t sock = -1;

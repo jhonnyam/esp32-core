@@ -1,8 +1,8 @@
 #ifndef _WIFI_H_
 #define _WIFI_H_
 
-#define SSID "Test_SSID"
-#define PASSWD "Test_PW"
+#define SSID "lifesensor"
+#define PASSWD "caduscadus"
 
 /**
  * Initialise wifi connection by setting relevant information

@@ -2,6 +2,8 @@
 #include "spo2.h"
 #include "wifi.h"
 #include "transmission.h"
+#include "wifi-test.h"
+#include "esp_log.h"
 
 
 static uint8_t spo2_queue_buffer[SPO2_QUEUE_BUFFER_SIZE];
@@ -31,8 +33,12 @@ void app_main()
 {
 	spo2_init(&spo2_task, &spo2_queue);
 	ulp_init(&spo2_queue);
+	ESP_LOGD("MAIN", "Wifi initialized");
 	wifi_init();
 	wifi_wait_connected();
 	transmission_init();
+	ESP_LOGD("MAIN", "Initializing wifi test task");
+	wifi_test_init();
+	ESP_LOGD("MAIN", "Tastk started");
 }
 
