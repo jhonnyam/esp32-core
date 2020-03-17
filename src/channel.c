@@ -1,23 +1,9 @@
-#include "message.h"
+#include "channel.h"
 
-static channel_group unique_head;
-
-/**
- * init_message - Initializes dummy head of unique identifier chain
- */
-void 
-init_message() 
-{
-    unique_head.name = "";
-    INIT_LIST_HEAD(&unique_head.same);
-    INIT_LIST_HEAD(&unique_head.unique);
-    unique_head.push = NULL;
-    unique_head.state = NULL;
-    unique_head.data_size = 0;
-}
+static CHANNEL(root, "", NULL, NULL);
 
 /**
- * register_channel - register in or output to a channel
+ * channel_register - register a channel
  * @channel: channel to register
  * 
  * This function adds channel to the message passing structure. 
@@ -26,63 +12,70 @@ init_message()
  * callback implementation.
  */
 void 
-register_channel
-(channel_group *channel) 
+channel_register
+(struct channel *ch) 
 {
-    channel_group *curr;
-    list_for_each_entry(curr, &unique_head.unique, unique) {
-        if (strcmp(channel->name, curr->name) == 0) {
-            list_add(&channel->same, &curr->same);
+    struct channel *curr;
+    list_for_each_entry(curr, &root.unique, unique) {
+        if (strcmp(ch->name, curr->name) == 0) {
+            list_add(&ch->same, &curr->same);
             return;
         }
     }
 
-    list_add(&channel->unique, &unique_head.unique);
+    list_add(&ch->unique, &root.unique);
 }
 
 /**
- * publish - publish a message to all who registered on this channels identifier
- * @channel: the channel structure that holds informations for this channel
+ * channel_send - send a message to all who registered on this channels identifier
+ * @ch: the channel structure that holds informations for this channel
  * @data: the messages content
- * @size: the size of the message data
  * 
  * Iterates over all elements in the same list, that registered on this channels identifier
  * and calls the push callback function on it. 
  */
 void 
-publish
-(channel_group *channel, void *data, unsigned int size) 
+channel_send
+(struct channel *ch, void *data) 
 {
-    channel_group *curr;
-    list_for_each_entry(curr, &channel->same, same) {
-        if (curr->push) {
-            curr->push(curr, data, size);
+    struct channel *curr;
+    list_for_each_entry(curr, &ch->same, same) {
+        if (curr->callback) {
+            curr->callback(curr->ctx, data);
         }
     }
 }
 
 /**
  * unregister_channel - removes a channel input or output from the message structure
- * @channel: channel to remove
+ * @ch: channel element to remove
  */
 void 
-unregister_channel
-(channel_group *channel) 
+channel_unregister
+(struct channel *ch) 
 {
+    int unique = ! list_empty(&ch->unique);
+    int same   = ! list_empty(&ch->same);
+
+    //channel is not registered
+    if (!unique && !same) {
+        return;
+    }
     //channel is not in the unique chain so just delete it
-    if (list_empty(&channel->unique)) {
-        list_del(&channel->same);
+    if (!unique && same) {
+        list_del(&ch->same);
         return;
     }
-    //channel is in the unique list
-    //but single element so also just delete it
-    if (list_empty(&channel->same)) {
-        list_del(&channel->unique);
+    //channel is in the unique list, but single element so also just delete it
+    if (unique && !same) {
+        list_del(&ch->unique);
         return;
     }
-    //channel is in unique list and there are others in same list
-    //so replace channel
-    struct list_head *unique_prev = channel->unique.prev;
-    list_del(&channel->unique);
-    list_add(unique_prev, channel->same.next);
+    //channel is in unique list and there are others in same list, so replace channel
+    if (unique && same) {
+        list_add(&ch->unique, &list_entry(ch->same.next, struct channel, same)->unique);
+        list_del(&ch->unique);
+        list_del(&ch->same);
+        return;
+    }
 }
