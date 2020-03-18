@@ -1,6 +1,6 @@
 #include "channel.h"
 
-static CHANNEL(root, "", NULL, NULL);
+static CHANNEL(root, "", NULL, 0, NULL);
 
 /**
  * channel_register - register a channel
@@ -13,11 +13,11 @@ static CHANNEL(root, "", NULL, NULL);
  */
 void 
 channel_register
-(struct channel *ch) 
+(Channel *ch) 
 {
-    struct channel *curr;
+    Channel *curr;
     list_for_each_entry(curr, &root.unique, unique) {
-        if (strcmp(ch->name, curr->name) == 0) {
+        if (strcmp(ch->identifier, curr->identifier) == 0) {
             list_add(&ch->same, &curr->same);
             return;
         }
@@ -34,16 +34,31 @@ channel_register
  * Iterates over all elements in the same list, that registered on this channels identifier
  * and calls the push callback function on it. 
  */
-void 
-channel_send
-(struct channel *ch, void *data) 
+const BaseType_t
+channel_broadcast
+(Channel * const ch, Channel ** tmp, const void * const data, const TickType_t timeout)
 {
-    struct channel *curr;
-    list_for_each_entry(curr, &ch->same, same) {
+    Channel *curr = *tmp;
+    list_for_each_entry_continue(curr, &ch->same, same) {
         if (curr->callback) {
-            curr->callback(curr->ctx, data);
+            BaseType_t status = curr->callback(curr->ctx, data, timeout, curr->flags);
+            if (!status) {
+                *tmp = curr;
+                return status;
+            };
         }
     }
+    return pdPass;
+}
+
+const BaseType_t
+channel_send
+(Channel * const ch, const void * const data, const TickType_t timeout, const BaseType_t flags)
+{
+    if (!ch->callback) {
+        return pdPass;
+    }
+    return ch->callback(ch->ctx, data, timeout, flags);
 }
 
 /**
@@ -52,7 +67,7 @@ channel_send
  */
 void 
 channel_unregister
-(struct channel *ch) 
+(Channel *ch) 
 {
     int unique = ! list_empty(&ch->unique);
     int same   = ! list_empty(&ch->same);
