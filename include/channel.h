@@ -1,6 +1,7 @@
 // Channels are objects which enable iteration over other Channel objects with
 // the same name/identifier.
-// They are implemented as an item of two separate lists.
+// This implementation resembles a map, mapping identifiers to lists. 
+// Channels are implemented as an item of two separate lists.
 // The "unique" list holds items with different identifiers,
 // the "same" list holds items that share the same identifier. 
 // Each list item itself is a valid list containing only itself;
