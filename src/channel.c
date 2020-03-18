@@ -1,6 +1,8 @@
 #include "channel.h"
 
 #include <string.h>
+#include <freertos/projdefs.h>
+
 
 // root channel of the unique channel list
 static CHANNEL(root, "", NULL, 0, NULL);
@@ -20,7 +22,7 @@ channel_register
     list_add(&ch->unique, &root.unique);
 }
 
-const BaseType_t
+BaseType_t
 channel_broadcast
 (Channel * const ch, Channel ** pos, const void * const data, const TickType_t timeout)
 {
@@ -34,15 +36,15 @@ channel_broadcast
             };
         }
     }
-    return pdPass;
+    return pdPASS;
 }
 
-const BaseType_t
+BaseType_t
 channel_send
 (Channel * const ch, const void * const data, const TickType_t timeout, const BaseType_t flags)
 {
     if (!ch->callback) {
-        return pdPass;
+        return pdPASS;
     }
     return ch->callback(ch->ctx, data, timeout, ch->flags);
 }

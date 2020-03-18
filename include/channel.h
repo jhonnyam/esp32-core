@@ -144,7 +144,7 @@ channel_deregister
  *  channel_init_broadcast(ch,pos);
  *  while(!channel_broadcast(ch,pos,data,timeout));
  */
-const BaseType_t
+BaseType_t
 channel_broadcast
 (Channel * const ch, Channel ** tmp, const void * const data, const TickType_t timeout);
 
@@ -157,7 +157,7 @@ channel_broadcast
  * 
  * Calls the callback function on the channel.
  */
-const BaseType_t
+BaseType_t
 channel_send
 (Channel * const ch, const void * const data, const TickType_t timeout, const BaseType_t flags);
 
