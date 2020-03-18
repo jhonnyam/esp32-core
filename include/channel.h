@@ -59,6 +59,8 @@ inline __attribute__((always_inline))
 channel_init 
 (Channel * const ch, const char * const identifier, void * const ctx, const BaseType_t flags, Channel_callback callback) {
     ch->identifier = identifier;
+    INIT_LIST_HEAD(&ch->unique);
+    INIT_LIST_HEAD(&ch->same);
     ch->ctx = ctx;
     ch->flags = flags;
     ch->callback = callback;
