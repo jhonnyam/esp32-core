@@ -1,12 +1,8 @@
 #ifndef __CHANNEL__
 #define __CHANNEL__
 
-// #include <freertos/FreeRTOS.h>
-// #include <freertos/queue.h>
-typedef int BaseType_t;
-typedef int TickType_t;
-#define pdPass 1;
-void xQueueGenericSend(void *ctx, const void * const data, TickType_t timeout, const BaseType_t flags);
+#include <freertos/FreeRTOS.h>
+#include <freertos/queue.h>
 
 #include "list.h"
 
