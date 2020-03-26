@@ -1,0 +1,10 @@
+idf_component_register(
+  SRCS
+    spo2.c
+    spo2_filter.c
+    spo2_driver.c
+  INCLUDE_DIRS
+    include
+  REQUIRES
+    ulp_adc
+)
