@@ -77,8 +77,7 @@ typedef struct {
  * database like influxdb.
  */
 void log_wifi_init(
-    _log_wifi_task *log_wifi_task, 
-    _log_wifi_queue *log_wifi_queue
+    _log_wifi_task *log_wifi_task
 );
 
 #endif

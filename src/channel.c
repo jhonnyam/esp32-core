@@ -2,7 +2,7 @@
 
 #include <string.h>
 #include <freertos/projdefs.h>
-
+#include <esp_log.h>
 
 // root channel of the unique channel list
 static CHANNEL(root, "", NULL, 0, NULL);
@@ -12,6 +12,7 @@ channel_register
 (Channel *ch) 
 {
     Channel *curr;
+    ESP_LOGE("register", "Channel: %s", ch->identifier);
     list_for_each_entry(curr, &root.unique, unique) {
         if (strcmp(ch->identifier, curr->identifier) == 0) {
             list_add(&ch->same, &curr->same);
@@ -27,8 +28,11 @@ channel_broadcast
 (Channel * const ch, Channel ** pos, const void * const data, const TickType_t timeout)
 {
     Channel *curr = *pos;
+    int i = 0;
+    ESP_LOGE("broadcast", "Channel: %s", ch->identifier);
     list_for_each_entry_continue(curr, &ch->same, same) {
         if (curr->callback) {
+            ESP_LOGE("channel", "member: %d", ++i);
             BaseType_t status = curr->callback(curr->ctx, data, timeout, curr->flags);
             if (!status) {
                 *pos = curr;
