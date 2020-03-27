@@ -129,7 +129,7 @@ static
 void 
 inline __attribute__((always_inline))
 channel_setCallback
-(Channel * const ch, const Channel_callback const callback) {
+(Channel * const ch, const Channel_callback callback) {
     ch->callback = callback;
 }
 
@@ -142,7 +142,7 @@ static
 void
 inline __attribute__((always_inline))
 channel_init_broadcast
-(const Channel * const ch, const Channel ** const pos)
+(Channel * const ch, Channel ** pos)
 {
     *pos = ch;
 }
