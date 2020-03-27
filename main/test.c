@@ -51,7 +51,7 @@ ping_over_wifi
 
         _log_wifi_data data = {
             .format = logf,
-            .key_name = &ch_ping.identifier,
+            .key_name = ch_ping.identifier,
             .value = (i/10)%17,
             .tags = tags
         };

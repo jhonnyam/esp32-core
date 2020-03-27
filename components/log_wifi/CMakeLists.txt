@@ -1,12 +1,10 @@
 idf_component_register(
   SRCS
-    main.c
-    test.c
-  REQUIRES
-    spo2
-    ulp
-    wifi
-    transmission
-    channel
     log_wifi
+  INCLUDE_DIRS
+    include
+  REQUIRES
+    transmission
+    wifi
+    channel
 )
