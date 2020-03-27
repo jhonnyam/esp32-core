@@ -75,6 +75,32 @@ distclean-test:
 	rm -f  test/sdkconfig
 	rm -rf test/build
 
+### test targets ###
+
+.PHONY: test
+TARGET += test
+HELP_test = build test project, flash it, monitor it
+test: build-test flash-test monitor
+
+.PHONY: build-test
+TARGET_build += build-test
+HELP_build-test = builds tests
+build-test: | check-docker
+	@make --no-print-directory -C docker idf EXEC="cd test; idf.py build"
+
+.PHONY: clean-test
+CLEAN += clean-test
+HELP_clean-test: let idf clean generated files of the test build
+clean-test: | check-docker
+	@make --no-print-directory -C docker idf EXEC="cd test; idf.py clean"
+
+.PHONY: distclean-test
+DISTCLEAN += distclean-test
+HELP_distclean-test = removes all generated files of the test build
+distclean-test:
+	rm -f  test/sdkconfig
+	rm -rf test/build
+
 ### flash targets ###
 
 .PHONY: flash
