@@ -8,7 +8,7 @@
 
 #include "transmission.h"
 
-#define SERVER_IP "192.168.100.1"
+#define SERVER_IP "192.168.178.34"
 #define PORT 4321
 
 struct sockaddr_in dest_addr;
