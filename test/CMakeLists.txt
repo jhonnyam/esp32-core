@@ -5,6 +5,7 @@ set(EXTRA_COMPONENT_DIRS "../components" )
 set(
   TEST_COMPONENTS
     spo2
+    channel
   CACHE STRING
     "List of components to test"
 )
