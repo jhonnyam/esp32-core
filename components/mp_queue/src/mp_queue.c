@@ -11,16 +11,18 @@
 #define MP_TEST_STACK_SIZE 0x1000
 
 static void producer(void *pvParameters);
+static void producer_slow(void *pvParameters);
 static void consumer(void *pvParameters);
+static void consumer_slow(void *pvParameters);
 
 static Channel_in in1[2];
 static Channel_in in2[2];
 static Channel_out out1, out2;
 
-static uint8_t c1_q1_buffer[8*sizeof(float)];
-static uint8_t c1_q2_buffer[8*sizeof(float)];
-static uint8_t c2_q1_buffer[8*sizeof(float)];
-static uint8_t c2_q2_buffer[8*sizeof(float)];
+static uint8_t c1_q1_buffer[2*sizeof(float)];
+static uint8_t c1_q2_buffer[2*sizeof(float)];
+static uint8_t c2_q1_buffer[2*sizeof(float)];
+static uint8_t c2_q2_buffer[2*sizeof(float)];
 
 static StaticQueue_t c1_q1;
 static StaticQueue_t c1_q2;
@@ -36,36 +38,36 @@ static StackType_t c2_task_stack[MP_TEST_STACK_SIZE];
 void
 test_mp_queue_init() {
 	QueueHandle_t q11 = xQueueCreateStatic(
-		8,
+		2,
 		sizeof(float),
 		c1_q1_buffer,
 		&c1_q1
 	);
 
 	QueueHandle_t q12 = xQueueCreateStatic(
-		8,
+		2,
 		sizeof(float),
 		c1_q2_buffer,
 		&c1_q2
 	);
 
 	QueueHandle_t q21 = xQueueCreateStatic(
-		8,
+		2,
 		sizeof(float),
 		c2_q1_buffer,
 		&c2_q1
 	);
 
 	QueueHandle_t q22 = xQueueCreateStatic(
-		8,
+		2,
 		sizeof(float),
 		c2_q2_buffer,
 		&c2_q2
 	);
 
 	channel_init_input(&in1[1], "ch1", q11);
-	channel_init_input(&in2[1], "ch2", q12);
-	channel_init_input(&in1[2], "ch1", q21);
+	channel_init_input(&in1[2], "ch2", q12);
+	channel_init_input(&in2[1], "ch1", q21);
 	channel_init_input(&in2[2], "ch2", q22);
 	
 	channel_init_output(&out1, "ch1");
@@ -84,7 +86,7 @@ test_mp_queue_init() {
 	ESP_LOGD("mp_queue:init", "Satrted p1");
 
 	xTaskCreateStatic(
-		producer,
+		producer_slow,
 		"prod_2",
 		MP_TEST_STACK_SIZE,
 		(void *)&out2,
@@ -106,7 +108,7 @@ test_mp_queue_init() {
 	ESP_LOGD("mp_queue:init", "Satrted c1");
 
 	xTaskCreateStatic(
-		consumer,
+		consumer_slow,
 		"cons_2",
 		MP_TEST_STACK_SIZE,
 		(void *)in2,
@@ -124,11 +126,29 @@ static void producer(void *pvParameters) {
 	float data = 0.0;
 	ESP_LOGI("mp_queue::producer", "Satrted");
 	for (int i = 0;;i++) {
-		data = i / 3;
-		ESP_LOGI("producer", "sending %f to channel %s", data, ch->identifier);
-		channel_broadcast_init(&b, ch, &data, 0);
+		data = (float)i;
+		ESP_LOGW("producer_skip", "sending %f to channel %s", data, ch->identifier);
+		channel_broadcast_init(&b, ch, &data, 1000/portTICK_PERIOD_MS);
 		channel_broadcast(&b);
-		vTaskDelay(1000/portTICK_PERIOD_MS);
+		vTaskDelay(100/portTICK_PERIOD_MS);
+	}
+}
+
+static void producer_slow(void *pvParameters) {
+	Channel_out *ch = (Channel_out *)pvParameters;
+	Channel_broadcast b;
+	float data = 0.0;
+	ESP_LOGI("mp_queue::producer", "Satrted");
+	for (int i = 0;;i++) {
+		data = (float)i;
+		ESP_LOGW("producer_block", "sending %f to channel %s", data, ch->identifier);
+		channel_broadcast_init(&b, ch, &data, 1000/portTICK_PERIOD_MS);
+		while (!channel_broadcast_finished(&b))
+		{
+			int i = channel_broadcast(&b);
+			ESP_LOGI("bc", "i: %d", i);
+		}
+		vTaskDelay(100/portTICK_PERIOD_MS);
 	}
 }
 
@@ -141,11 +161,21 @@ static void consumer(void *pvParameters) {
 			ESP_LOGI("consumer", "received %f on channel %s", d1, in[1].identifier);
 			sum += d1;
 		}
+		ESP_LOGI("consumer", "Sum: %f", sum);
+		vTaskDelay(1000/portTICK_PERIOD_MS);
+	}
+}
+
+static void consumer_slow(void *pvParameters) {
+	Channel_in *in = (Channel_in *)pvParameters;
+	float d1 = 0.0, d2 = 0.0, sum = 0.0;
+	ESP_LOGI("mp_queue::consumer_slow", "Satrted");
+	for (;;) {
 		if (xQueueReceive((QueueHandle_t)in[2].ctx, &d2, 0)) {
-			ESP_LOGI("consumer", "received %f on channel %s", d2, in[2].identifier);
+			ESP_LOGI("consumer_slow", "received %f on channel %s", d2, in[2].identifier);
 			sum += d2;
 		}
-		ESP_LOGI("consumer", "Sum: %f", sum);
-		vTaskDelay(100/portTICK_PERIOD_MS);
+		ESP_LOGI("consumer_slow", "Sum: %f", sum);
+		vTaskDelay(3000/portTICK_PERIOD_MS);
 	}
 }
