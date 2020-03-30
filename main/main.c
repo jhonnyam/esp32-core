@@ -2,6 +2,7 @@
 #include "spo2.h"
 #include "wifi.h"
 #include "transmission.h"
+#include "mp_queue.h"
 
 
 static uint8_t spo2_queue_buffer[SPO2_QUEUE_BUFFER_SIZE];
@@ -29,10 +30,12 @@ _spo2_task spo2_task = {
  */
 void app_main()
 {
-	spo2_init(&spo2_task, &spo2_queue);
-	ulp_init(&spo2_queue);
-	wifi_init();
-	wifi_wait_connected();
-	transmission_init();
+	// spo2_init(&spo2_task, &spo2_queue);
+	// ulp_init(&spo2_queue);
+	// wifi_init();
+	// wifi_wait_connected();
+	// transmission_init();
+	test_mp_queue_init();
+
 }
 
