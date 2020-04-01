@@ -12,9 +12,9 @@ jobs:
     - name: build idf image
       run: make -C docker idf-image
     - name: build qemu image
-      run: make -C docker qemu
+      run: make -C docker qemu-image
     - name: build idf project
-      run: make DOCKEROPTS=--tty=false build
+      run: make -C lifesensor_ci DOCKEROPTS=--tty=false build
     - name: convert firmware image
       run: make -C lifesensor_ci DOCKEROPTS=--tty=false qemu-image
     - name: run qemu
