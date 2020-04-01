@@ -112,7 +112,7 @@ check-monitor: | check-docker check-dev
 TARGET += qemu
 HELP_qemu = start qemu and run build image
 qemu: qemu-image | check-docker
-	@make --no-print-directory -C docker qemu \
+	@make --no-print-directory -C $(DOCKERDIR) qemu \
 		EXEC="echo \"############################\"; \
 	        echo \"# TO EXIT QEMU: <CTRL-X A> #\"; \
 	        echo \"############################\"; \
@@ -120,7 +120,7 @@ qemu: qemu-image | check-docker
 	          -no-reboot \
 	          -nographic \
 	          -machine esp32 \
-	          -drive file=build/qemu.bin,if=mtd,format=raw \
+	          -drive file=$(PROJECTDIR)/build/qemu.bin,if=mtd,format=raw \
 	        2>&1 | tee build/qemu.log; \
 	        grep -q \"0 Failures\" build/qemu.log"
 
@@ -139,7 +139,7 @@ $(PROJECTDIR)/build/qemu.bin: $(PROJECTDIR)/build/$(PROJECT).bin
 TARGET += qemu-gdb
 HELP_qemu-gdb = start qemu and wait for gdb
 qemu-gdb: qemu-image | check-docker
-	@make --no-print-directory -C docker qemu \
+	@make --no-print-directory -C $(DOCKERDIR) qemu \
 	  DOCKEROPTS="--name $(PROJECT).qemu" \
 		EXEC="echo \"###################################\"; \
 	        echo \"#        TO START GDB RUN         #\"; \
