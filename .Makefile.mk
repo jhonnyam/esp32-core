@@ -68,14 +68,13 @@ build: | check-docker
 CLEAN += clean-build
 HELP_clean-build = remove generated files of project components
 clean-build: | check-docker
-	rm -rf $(addprefix $(PROJECTDIR)/build/esp-idf/, $(shell ls components) main)
+	rm -rf $(WORKDIR)/build
 
 .PHONY: distclean-build
 DISTCLEAN += distclean-build
 HELP_distclean-build = remove all generated files
 distclean-build:
-	rm -f  $(PROJECTDIR)/sdkconfig
-	rm -rf $(PROJECTDIR)/build
+	rm -f  $(WORKDIR)/sdkconfig
 
 ### flash targets ###
 
