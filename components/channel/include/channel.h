@@ -109,7 +109,7 @@ channel_init_consumer
  */
 static
 void
-inline __attribute__((always_inline)) __attribute__((deprecated))
+inline __attribute__((always_inline))
 channel_init_producer
 (Channel_producer *ch, const char *identifier)
 {
@@ -192,7 +192,7 @@ channel_reset
  */
 BaseType_t
 channel_send
-(const Channel_in *ch, const void *data, const TickType_t timeout);
+(const Channel_consumer *ch, const void *data, const TickType_t timeout);
 
 /**
  * channel_broadcast_init - helper function to initialize broadcast handler
