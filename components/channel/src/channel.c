@@ -116,8 +116,8 @@ channel_broadcast
     void *data   = handle->data;
     TickType_t start = xTaskGetTickCount();
     TickType_t timeout = handle->timeout;
+    BaseType_t status;
     list_for_each_entry_continue(pos, (&ch->same), same) {
-        BaseType_t status;
         if (pos->callback) {
             if (channel_broadcast_timeout(handle)) {
                 handle->pos = pos;
@@ -145,7 +145,9 @@ channel_broadcast
         timeout = handle->timeout - handle->elapsed;
     }
     handle->pos = NULL;
-    return channel_send(handle->ch, handle->data, timeout);
+    status = channel_send(handle->ch, handle->data, timeout);
+    handle->elapsed += xTaskGetTickCount() - start;
+    return status;
 }
 
 EXPORT
