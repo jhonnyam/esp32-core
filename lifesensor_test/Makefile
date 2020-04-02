@@ -1,1 +1,1 @@
-include ../.Makefile.mk
+../.Makefile.mk
