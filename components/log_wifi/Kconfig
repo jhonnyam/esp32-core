@@ -1,0 +1,8 @@
+menu "Counter"
+    menuconfig LOG_WIFI_TEST_ENABLE
+        bool "Enable unit test"
+        default y
+    if LOG_WIFI_TEST_ENABLE
+        
+    endif
+endmenu
