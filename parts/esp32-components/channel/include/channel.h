@@ -29,10 +29,10 @@
 //                             ^
 //      same identifier list---'                    
 //
-// Each Channel object contains a context pointer, a callback function and
+// Each Channel object contains a context pointer, two callback functions (blocking/nonblocking) and
 // an additional flags field. A broadcast function is provided to iterate
-// through all "same" list items of a Channel object. The callback is issued
-// with a data pointer and a timeout value by the caller and the callee
+// through all "same" list items of a Channel object. The callbacks are issued
+// with a data pointer and a timeout value (if blocking) by the caller and the callee
 // specific context and flags. This interface is intended to enable dynamic
 // management of FreeRTOS queues, where a queue can be registered as a context
 // of a Channel and therefore fed by the Channels callback.
@@ -40,193 +40,81 @@
 #ifndef __CHANNEL__
 #define __CHANNEL__
 
-#include <freertos/FreeRTOS.h>
-#include <freertos/queue.h>
-
 #include "list.h"
 
-typedef BaseType_t (*Channel_callback) (void *ctx, const void *data, const TickType_t timeout, const BaseType_t flags);
+typedef int (*Channel_callback) (void *ctx, const void *data, const int timeout);
+typedef int (*Channel_callback_nb) (void *ctx, const void *data);
 
 struct channel {
     const char *identifier;
     struct list_head same;
     struct list_head unique;
     void *ctx;
-    BaseType_t flags;
     Channel_callback callback;
+    Channel_callback_nb callback_nb;
 };
 
 typedef struct channel Channel;
-typedef struct channel Channel_consumer;
-typedef struct channel Channel_producer;
-
-typedef struct broadcast {
-    Channel *ch;
-    Channel *pos;
-    void *data;
-    TickType_t timeout;
-    TickType_t elapsed;
-} Channel_broadcast;
-
-#ifndef STR
-#define STR(X) _STR(X)
-#define _STR(X) #X
-#endif
 
 /**
- * channel_init - initialize & register channel object
+ * channel_init - initialize channel object
  * @ch: pointer to channel object to initialize
  * @identifier: identifier string of the channel
  * @ctx: pointer to context of the callback
- * @flags: additional flags for the callback to modify behaviour
  * @callback: function to call on new data  
+ * @callback_nb: like callback but non blocking thus can be called from ISR
  */ 
 void
 channel_init 
-(Channel *ch, const char *identifier, void *ctx, const BaseType_t flags, Channel_callback callback);
+(Channel *ch, const char *identifier, void *ctx, Channel_callback callback, Channel_callback_nb callback_nb);
 
 /**
- * channel_init_consumer - helper function to initialize channel object as consumer
- * @ch: pointer to channel object to initialize
- * @identifier: identifier string of the channel
- * @queue: queue handle to send input to 
+ * channel_register - register a channel
+ * @ch: channel to register
+ * 
+ * This function adds channel to the message passing structure. 
+ * It doesn't make a difference whether this is a message
+ * provider or consumer. The difference is only made by the channels
+ * callback implementation.
  */
-static
-void
-inline
-channel_init_consumer
-(Channel_consumer *ch, const char *identifier, QueueHandle_t queue)
-{
-    return channel_init(ch, identifier, queue, queueSEND_TO_BACK, &xQueueGenericSend);
-}
-
-/**
- * channel_init_producer - helper function to initialize channel object as producer
- * @ch: pointer to channel object to initialize
- * @identifier: identifier string of the channel
- */
-static
-void
-inline
-channel_init_producer
-(Channel_producer *ch, const char *identifier)
-{
-    return channel_init(ch, identifier, NULL, 0, NULL);
-}
-
-/**
- * channel_setContext - helper function to change the context the callback acts on
- * @ch: pointer to channel object to modify
- * @ctx: pointer to new context
- */
-static
-void
-inline
-channel_setContext 
-(Channel *ch, void *ctx)
-{
-    ch->ctx = ctx;
-}
-
-/**
- * channel_setCallback - helper function to change the callback
- * @ch: pointer to channel object to modify
- * @callback: function to register as callback
- */
-static
 void 
-inline
-channel_setCallback
-(Channel *ch, const Channel_callback callback)
-{
-    ch->callback = callback;
-}
-
-/**
- * reset_channel - removes a channel input or output from the message structure
- * @ch: channel element to reset
- */
-void
-channel_reset
+channel_register
 (Channel *ch);
 
 /**
- * channel_send - sends a message to a single channel object
- * @ch: the channel structure that holds informations for this channel
- * @data: the pointer to the message
- * @timeout: how many time-slices the callback may block before aborting
- * @return: returns pdPass (=1) if send was successful, if non-one value is returned, callback failed
- * 
- * Calls the callback function on the channel.
+ * channel_unregister - removes a channel input or output from the message structure
+ * @ch: channel element to unregister
  */
-BaseType_t
-channel_send
-(const Channel_consumer *ch, const void *data, const TickType_t timeout);
-
-/**
- * channel_broadcast_init - helper function to initialize broadcast handler
- * @handle: pointer to broadcast object
- * @ch: pointer to channel object initiating the broadcast
- * @data: pointer to data to be transferred
- * @timeout: number of time-slices each receiver may block 
- */
-static
-void
-inline
-channel_broadcast_init
-(Channel_broadcast *handle, const Channel_producer *ch, const void *data, const TickType_t timeout)
-{
-    handle->ch = (void*) ch;
-    handle->pos = (void*) ch;
-    handle->data = (void*) data;
-    handle->timeout = timeout;
-    handle->elapsed = 0;
-}
-
-/**
- * channel_broadcast_timeout - helper function to determine if broadcast timed out
- * @handle: pointer to broadcast object
- */
-static
-bool
-inline
-channel_broadcast_timeout
-(Channel_broadcast *handle)
-{
-    if (handle->timeout == portMAX_DELAY) {
-        return false;
-    }
-    if (handle->elapsed >= handle->timeout) {
-        return true;
-    }
-    return false;
-}
-
-/**
- * channel_broadcast_finished - helper function to determine if broadcast finished
- * Does not provide information if broadcast was successful!
- * @ch: pointer to channel object
- */
-static
-bool
-inline
-channel_broadcast_finished
-(const Channel_broadcast *handle)
-{
-    return handle->pos == NULL;
-}
+void 
+channel_unregister
+(Channel *ch);
 
 /**
  * channel_broadcast - send a message to all who registered on this channels identifier
- * @handle: the broadcast handle to act on
- * @return: returns callback return value each time iteration was stopped 
+ * @ch: the channel to act on
+ * @data: the data that should be send to all channels
+ * @timeout: the overall time the broadcast is allowed to block for sending to channels
+ * @get_time: the function to determine the current time to calculate elapsed time of a send operation
+ * @return: returns remaining time in regard to timeout
  * 
  * Iterates over all elements in the same list, that registered on this channels identifier
- * and calls the callback function on it. May return with error_code before all elements were notified,
- * allowing for custom error handling.
+ * and calls the callback function on it. If timeout is exceeded continues operation on
+ * remaining channels using the non-blocking callback.
  */
-BaseType_t
+int
 channel_broadcast
-(Channel_broadcast *handle);
+(Channel *ch, void *data, const int timeout, int (* get_time)(void));
+
+/**
+ * channel_broadcast_nb - non-blocking broadcast version that can be called from ISRs
+ * @ch: the channel to act on
+ * @data: the data that should be send to registered channels
+ * 
+ * Iterates over all elements in the same list, that registered on this channels identifier
+ * and calls the non-blocking callback function on it.
+ */
+void
+channel_broadcast_nb
+(Channel *ch, void *data);
 
 #endif
