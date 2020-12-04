@@ -56,6 +56,17 @@ struct channel {
 
 typedef struct channel Channel;
 
+
+#define INIT_CHANNEL(NAME, CTX, CALLBACK, CALLBACK_NB) \
+{ \
+    .identifier  = (NAME),\
+    .same        = { 0 },\
+    .unique      = { 0 },\
+    .ctx         = (CTX),\
+    .callback    = (CALLBACK),\
+    .callback_nb = (CALLBACK_NB),\
+}
+
 /**
  * channel_init - initialize channel object
  * @ch: pointer to channel object to initialize
@@ -66,7 +77,7 @@ typedef struct channel Channel;
  */ 
 void
 channel_init 
-(Channel *ch, const char *identifier, void *ctx, Channel_callback callback, Channel_callback_nb callback_nb);
+(Channel *ch);
 
 /**
  * channel_register - register a channel

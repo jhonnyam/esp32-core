@@ -6,18 +6,10 @@ void
 channel_init
 (
         Channel *ch, 
-        const char *identifier, 
-        void *ctx, 
-        Channel_callback callback,
-        Channel_callback_nb callback_nb
 )
 {
-    ch->identifier = identifier;
     INIT_LIST_HEAD(&ch->unique);
     INIT_LIST_HEAD(&ch->same);
-    ch->ctx = ctx;
-    ch->callback = callback;
-    ch->callback_nb = callback_nb;
 }
 
 void 
