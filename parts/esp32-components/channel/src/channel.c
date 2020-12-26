@@ -4,9 +4,7 @@
 
 void 
 channel_init
-(
-        Channel *ch, 
-)
+(Channel *ch)
 {
     INIT_LIST_HEAD(&ch->unique);
     INIT_LIST_HEAD(&ch->same);
@@ -77,12 +75,12 @@ channel_broadcast
 {
     int start = get_time();
     int remaining = timeout;
-    Channel *pos = NULL;
+    Channel *pos = ch;
     list_for_each_entry_continue(pos, (&ch->same), same)
     {
         if (remaining <= 0)
         {
-            pos = pos->same.prev;
+            pos = list_entry(pos->same.prev, Channel, same);
             break;
         }
         if (!pos->callback)
@@ -103,24 +101,24 @@ channel_broadcast
         {
             continue;
         }
-        pos->callback_nb(pos->ctx, data);
+        pos->callback_nb(pos, data);
     }
 
     remaining = timeout - (get_time() - start);
     return remaining;
 }
 
-int
+void
 channel_broadcast_nb
 (Channel *ch, void *data)
 {
     Channel *pos = NULL;
-    list_for_each_entry_continue(pos, (&ch->same), same)
+    list_for_each_entry(pos, (&ch->same), same)
     {
         if (!pos->callback_nb)
         {
             continue;
         }
-        pos->callback_nb(pos->ctx, data);
+        pos->callback_nb(pos, data);
     }
 }

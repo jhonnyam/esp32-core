@@ -2,7 +2,8 @@
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 #include "channel.h"
-#include "channel_internal.h"
+
+#if 0
 
 static void *callback_ctx;
 static void *callback_data;
@@ -753,3 +754,4 @@ TEST_CASE("channel_queue loop", "[channel]")
     channel_internal_resetRoot();
 }
 #endif
+#endif //0

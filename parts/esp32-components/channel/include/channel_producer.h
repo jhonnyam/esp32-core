@@ -3,6 +3,7 @@
 
 #include "channel.h"
 #include "module.h"
+#include "logger.h"
 
 struct channel_producer {
     Lifesensor_module module;
@@ -11,9 +12,9 @@ struct channel_producer {
 typedef struct channel_producer Channel_producer;
 
 void channel_producer_init(Lifesensor_module *module);
-void channel_producer_dump(Lifesensor_module *module, lifesensor_logger *logger, lifesensor_logger_scope *scope);
+void channel_producer_dump(Lifesensor_module *module, Lifesensor_logger *logger, Lifesensor_logger_scope *scope);
 
-#define INIT_CHANNEL_PRODUCER(NAME)
+#define INIT_CHANNEL_PRODUCER(NAME) \
 {   \
     .module = INIT_LIFESENSOR_MODULE(   \
         Channel_producer,   \

@@ -42,11 +42,14 @@
 
 #include "list.h"
 
-typedef int (*Channel_callback) (void *ctx, const void *data, const int timeout);
-typedef int (*Channel_callback_nb) (void *ctx, const void *data);
+typedef struct channel Channel;
+
+typedef int (*Channel_callback) (Channel *ch, const void *data, const int timeout);
+typedef int (*Channel_callback_nb) (Channel *ch, const void *data);
 
 struct channel {
     const char *identifier;
+    const char *name;
     struct list_head same;
     struct list_head unique;
     void *ctx;
@@ -54,12 +57,10 @@ struct channel {
     Channel_callback_nb callback_nb;
 };
 
-typedef struct channel Channel;
-
-
-#define INIT_CHANNEL(NAME, CTX, CALLBACK, CALLBACK_NB) \
+#define INIT_CHANNEL(ID, NAME, CTX, CALLBACK, CALLBACK_NB) \
 { \
-    .identifier  = (NAME),\
+    .identifier  = (ID),\
+    .name        = (NAME),\
     .same        = { 0 },\
     .unique      = { 0 },\
     .ctx         = (CTX),\
@@ -90,7 +91,7 @@ channel_init
  */
 void 
 channel_register
-(Channel *ch);
+(Channel *root, Channel *ch);
 
 /**
  * channel_unregister - removes a channel input or output from the message structure
